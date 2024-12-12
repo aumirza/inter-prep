@@ -20,9 +20,9 @@ jobs:
 
       - name: Configure Git
         run: |
-          # git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"  
-          
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
       - name: Fetch branches
         run: |
           git fetch origin content
@@ -44,7 +44,7 @@ jobs:
 
       - name: Merge rewritten branch into main
         run: |
-          git merge --no-ff temp-working-branch -m "Merge content branch into main with prefix 'content'"
+          git merge --no-ff temp-working-branch --allow-unrelated-histories -m "Merge content branch into main with prefix 'content'"
 
       - name: Push changes
         run: |
