@@ -1,0 +1,37 @@
+name: Sync Content Branch to Main
+
+on:
+  push:
+    branches:
+      - content
+
+permissions:
+  contents: write
+
+jobs:
+  sync-content:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Main Branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Merge Content Branch into Content Directory
+        run: |
+          git fetch origin content
+          git checkout origin/content -- .
+          mkdir -p content
+          mv * content/ || true
+          mv .* content/ || true # Include hidden files
+          git add -f content/ # Force add ignored files
+          git commit -m "$(git log -1 --pretty=%B origin/content)" || echo "No changes in content branch to commit"
+
+      - name: Push Changes to Main
+        run: git push origin main
