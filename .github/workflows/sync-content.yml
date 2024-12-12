@@ -21,31 +21,12 @@ jobs:
       - name: Configure Git
         run: |
           # git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-<<<<<<< HEAD
+          git config user.email "github-actions[bot]@users.noreply.github.com"  
+          
       - name: Fetch branches
         run: |
           git fetch origin content
           git fetch origin main
-=======
-      - name: Fetch Content Branch and Sync
-        run: |
-          git fetch origin content
-          # Extract the last commit message from the content branch
-          LAST_COMMIT_MSG=$(git log origin/content -1 --pretty=%B)
-          # Create a temporary directory to hold the content branch files
-          mkdir temp_content
-          git checkout origin/content -- . && mv * temp_content/ || true
-          mv .* temp_content/ || true # Include hidden files except .git
-          rm -rf temp_content/.git # Avoid moving .git directory
-          mkdir -p content
-          mv temp_content/* content/ || true
-          mv temp_content/.* content/ || true
-          rm -rf temp_content
-          git add content/ # Add all files to the content directory
-          git commit -m "$LAST_COMMIT_MSG" || echo "No changes to commit"
->>>>>>> 9a9ed243831688bfbcf7d180d6848183fb9255c9
 
       - name: Create a new branch from the source
         run: |
