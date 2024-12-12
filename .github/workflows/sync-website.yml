@@ -1,0 +1,34 @@
+name: Sync Website Branch to Main
+
+on:
+  push:
+    branches:
+      - website
+
+permissions:
+  contents: write
+
+jobs:
+  sync-website:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Main Branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Merge Website Branch with Commit Message from Website Branch
+        run: |
+          git fetch origin website
+          git checkout origin/website -- .
+          git add .
+          git commit -m "$(git log -1 --pretty=%B origin/website)" || echo "No changes to commit"
+
+      - name: Push Changes to Main
+        run: git push origin main
