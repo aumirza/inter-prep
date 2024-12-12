@@ -28,8 +28,8 @@ jobs:
           git fetch origin content
           git checkout origin/content -- .
           mkdir -p content
-          mv * content/ || true
-          mv .* content/ || true # Include hidden files
+          mv -T * content/ || true
+          mv -T .* content/ || true # Include hidden files
           git add -f content/ # Force add ignored files
           git commit -m "$(git log -1 --pretty=%B origin/content)" || echo "No changes in content branch to commit"
 
