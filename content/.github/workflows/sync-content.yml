@@ -20,17 +20,32 @@ jobs:
 
       - name: Configure Git
         run: |
-          git config user.name "github-actions[bot]"
+          # git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Merge Content Branch into Content Directory
+      - name: Fetch branches
         run: |
           git fetch origin content
-          git checkout origin/content -- .
-          mkdir -p content
-          find . -mindepth 1 ! -regex '^./content(/.*)?' -exec mv {} content/ \; || true
-          git add -f content/ # Force add ignored files
-          git commit -m "$(git log -1 --pretty=%B origin/content)" || echo "No changes in content branch to commit"
+          git fetch origin main
 
-      - name: Push Changes to Main
-        run: git push origin main
+      - name: Create a new branch from the source
+        run: |
+          git checkout content
+          git checkout -b temp-working-branch
+
+      - name: Rewrite commits with folder prefix
+        run: |
+          # Rewrite paths to include folder prefix
+          git filter-branch --tree-filter "mkdir -p content && find . -maxdepth 1 ! -name 'content' ! -name '.' ! -name '.git' -exec mv {} content/ \;" HEAD
+
+      - name: Checkout the target branch
+        run: |
+          git checkout main
+
+      - name: Merge rewritten branch into main
+        run: |
+          git merge --no-ff temp-working-branch -m "Merge content branch into main with prefix 'content'"
+
+      - name: Push changes
+        run: |
+          git push origin main
