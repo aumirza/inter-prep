@@ -1,0 +1,51 @@
+name: Sync Content Branch to Main
+
+on:
+  push:
+    branches:
+      - content
+
+permissions:
+  contents: write
+
+jobs:
+  sync-content:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Main Branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch branches
+        run: |
+          git fetch origin content
+          git fetch origin main
+
+      - name: Create a new branch from the source
+        run: |
+          git checkout content
+          git checkout -b temp-working-branch
+
+      - name: Rewrite commits with folder prefix
+        run: |
+          # Rewrite paths to include folder prefix
+          git filter-branch --tree-filter "mkdir -p content && find . -maxdepth 1 ! -name 'content' ! -name '.' ! -name '.git' -exec mv {} content/ \;" HEAD
+
+      - name: Checkout the target branch
+        run: |
+          git checkout main
+
+      - name: Merge rewritten branch into main
+        run: |
+          git merge --no-ff temp-working-branch --allow-unrelated-histories -m "Merge content branch into main with prefix 'content'"
+
+      - name: Push changes
+        run: |
+          git push origin main
