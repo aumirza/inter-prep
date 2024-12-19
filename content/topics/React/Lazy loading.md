@@ -1,0 +1,3 @@
+- Code splitting
+- Chunking
+- Suspense 
