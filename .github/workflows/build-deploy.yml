@@ -5,9 +5,9 @@ on:
     branches: ["main"]
 
   pull_request:
-    branches:
-      - content
-      - website
+    types:
+      - closed
+      - synchronized
 
 permissions:
   contents: write
