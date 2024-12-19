@@ -18,34 +18,32 @@ jobs:
         with:
           ref: main
 
-      - name: Configure Git
+      - name: Configure Git as GitHub Actor
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
 
       - name: Fetch branches
         run: |
           git fetch origin content
           git fetch origin main
 
-      - name: Create a new branch from the source
+      - name: Create Temporary Working Branch
         run: |
-          git checkout content
-          git checkout -b temp-working-branch
+          git checkout -b temp-working-branch origin/content
 
-      - name: Rewrite commits with folder prefix
+      - name: Rewrite Paths with Folder Prefix
         run: |
-          # Rewrite paths to include folder prefix
           git filter-branch --tree-filter "mkdir -p content && find . -maxdepth 1 ! -name 'content' ! -name '.' ! -name '.git' -exec mv {} content/ \;" HEAD
 
-      - name: Checkout the target branch
+      - name: Merge Rewritten Branch into Main
         run: |
           git checkout main
+          git merge --no-ff temp-working-branch --allow-unrelated-histories
 
-      - name: Merge rewritten branch into main
-        run: |
-          git merge --no-ff temp-working-branch --allow-unrelated-histories -m "Merge content branch into main with prefix 'content'"
+      - name: Push Changes
+        run: git push origin main
 
-      - name: Push changes
+      - name: Cleanup Temporary Branch
         run: |
-          git push origin main
+          git branch -D temp-working-branch
