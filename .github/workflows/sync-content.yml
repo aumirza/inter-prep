@@ -18,20 +18,38 @@ jobs:
         with:
           ref: main
 
-      - name: Configure Git
+      - name: Configure Git as GitHub Actor
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
 
-      - name: Merge Content Branch into Content Directory
+      - name: Fetch branches
         run: |
           git fetch origin content
-          git checkout origin/content -- .
-          mkdir -p content
-          mv -T * content/ || true
-          mv -T .* content/ || true # Include hidden files
-          git add -f content/ # Force add ignored files
-          git commit -m "$(git log -1 --pretty=%B origin/content)" || echo "No changes in content branch to commit"
+          git fetch origin main
 
-      - name: Push Changes to Main
+      - name: Create Temporary Working Branch
+        run: |
+          git checkout -b temp-working-branch origin/content
+
+      - name: Rewrite Paths with Folder Prefix
+        run: |
+          git filter-branch --tree-filter "mkdir -p content && find . -maxdepth 1 ! -name 'content' ! -name '.' ! -name '.git' -exec mv {} content/ \;" HEAD
+
+      - name: Merge Rewritten Branch into Main
+        run: |
+          git checkout main
+          git merge --no-ff temp-working-branch --strategy-option theirs --allow-unrelated-histories
+
+      - name: Push Changes
         run: git push origin main
+
+      - name: Cleanup Temporary Branch
+        run: |
+          git branch -D temp-working-branch
+
+      - name: Trigger Build Workflow
+        run: |
+          gh workflow run build-deploy.yml --ref main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
