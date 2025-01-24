@@ -1,4 +1,0 @@
-- React router
-- protected routes
-- RBAC
-- Dynamic routing

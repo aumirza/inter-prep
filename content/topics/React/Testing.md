@@ -1,3 +1,0 @@
-- React testing library
-- Unit test
-- Integration test
