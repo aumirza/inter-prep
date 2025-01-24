@@ -39,7 +39,7 @@ jobs:
       - name: Merge Rewritten Branch into Main
         run: |
           git checkout main
-          git merge --no-ff temp-working-branch --strategy-option theirs --allow-unrelated-histories
+          git merge --no-ff temp-working-branch --strategy-option --allow-unrelated-histories
 
       - name: Push Changes
         run: git push origin main
