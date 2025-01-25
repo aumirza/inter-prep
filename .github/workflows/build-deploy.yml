@@ -10,6 +10,11 @@ on:
     types:
       - closed
   workflow_dispatch:
+  workflow_run:
+    workflows:
+      - Sync Content Branch to Main
+    types:
+      - completed
 
 permissions:
   contents: write
