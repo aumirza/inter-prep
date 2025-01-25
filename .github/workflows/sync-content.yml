@@ -36,6 +36,7 @@ jobs:
           rsync -a --remove-source-files --exclude='.git/' --exclude='content/' ./ ./content/
           find . -type f -not -path './content/*' -not -path './.git/*' -delete
 
+          git add .
           # Retrieve commit messages from the content branch for the move
           commits=$(git log --oneline content-sync-branch ^main)
           while IFS= read -r commit; do
