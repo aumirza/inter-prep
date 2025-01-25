@@ -18,38 +18,75 @@ jobs:
         with:
           ref: main
 
-      - name: Configure Git as GitHub Actor
+      - name: Configure Git
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
 
-      - name: Fetch branches
-        run: |
-          git fetch origin content
-          git fetch origin main
+      - name: Fetch All Branches
+        run: git fetch origin
 
-      - name: Create Temporary Working Branch
+      - name: Create Content Sync Branch
         run: |
-          git checkout -b temp-working-branch origin/content
+          git checkout -b content-sync-branch origin/content
 
-      - name: Rewrite Paths with Folder Prefix
+      - name: Move Content Files into /content Directory
         run: |
-          git filter-branch --tree-filter "mkdir -p content && find . -maxdepth 1 ! -name 'content' ! -name '.' ! -name '.git' -exec mv {} content/ \;" HEAD
+          mkdir -p content
+          rsync -a --remove-source-files --exclude='.git/' --exclude='content/' ./ ./content/
+          find . -type f -not -path './content/*' -not -path './.git/*' -delete
 
-      - name: Merge Rewritten Branch into Main
+          git add .
+          # Retrieve commit messages from the content branch for the move
+          commits=$(git log --oneline content-sync-branch ^main)
+          while IFS= read -r commit; do
+            # Use the original commit message from the content branch
+            git commit -m "$commit" || echo "No changes to commit"
+          done <<< "$commits"
+
+      - name: Checkout Main Branch
+        run: git checkout main
+
+      - name: Merge Content into Main
         run: |
-          git checkout main
-          git merge --no-ff temp-working-branch --strategy-option theirs --allow-unrelated-histories
+          git merge --no-ff content-sync-branch --allow-unrelated-histories
+        continue-on-error: true
 
-      - name: Push Changes
+      - name: Resolve Conflicts (if any)
+        run: |
+          # Check for conflicts in the content folder
+          conflicts=$(git diff --name-only --diff-filter=U | grep '^content/')
+
+          if [ -n "$conflicts" ]; then
+            echo "Conflicts found in the content folder"
+            # Resolve the conflicts by favoring the 'content' branch (theirs)
+            git checkout --theirs content/
+            git add content/
+            
+            # Get the conflicting commit message from the content branch
+            conflict_commit_msg=$(git log --format=%B -n 1 content-sync-branch)
+            resolved_commit_msg="[Sync Resolution] $conflict_commit_msg"
+            
+            # Commit the resolution with the conflicting commit's message and a custom prefix
+            git commit -m "$resolved_commit_msg"
+          else
+            echo "No conflicts in the content folder"
+          fi
+
+      # - name: Preserve Commit Messages and Add Prefix
+      #   run: |
+      #     # Get the commit messages from the content branch and add a prefix
+      #     commits=$(git log --oneline content-sync-branch ^main)
+      #     while IFS= read -r commit; do
+      #       # Add a prefix (e.g., "[Sync]") to each commit message and commit with it
+      #       commit_msg="[Sync] $commit"
+      #       git commit -m "$commit_msg"
+      #     done <<< "$commits"
+      #     git push --force-with-lease
+
+      - name: Push Changes to Main
         run: git push origin main
 
-      - name: Cleanup Temporary Branch
+      - name: Cleanup Content Sync Branch
         run: |
-          git branch -D temp-working-branch
-
-      # - name: Trigger Build Workflow
-      #   run: |
-      #     gh workflow run build-deploy.yml --ref main
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          git branch -D content-sync-branch
