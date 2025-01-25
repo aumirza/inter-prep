@@ -18,38 +18,44 @@ jobs:
         with:
           ref: main
 
-      - name: Configure Git as GitHub Actor
+      - name: Configure Git
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
 
-      - name: Fetch branches
-        run: |
-          git fetch origin content
-          git fetch origin main
+      - name: Fetch All Branches
+        run: git fetch origin
 
-      - name: Create Temporary Working Branch
+      - name: Create Content Sync Branch
         run: |
           git checkout -b content-sync-branch origin/content
 
-      - name: Rewrite Paths with Folder Prefix
+      - name: Sync Content to Folder
         run: |
-          git filter-branch --tree-filter "mkdir -p content && find . -maxdepth 1 ! -name 'content' ! -name '.' ! -name '.git' -exec mv {} content/ \;" HEAD
+          mkdir -p content
+          rsync -a --delete --exclude='.git/' ./ ./content/
+          git add .
+          git commit -m "Sync content branch files to /content folder" || echo "No changes to commit"
 
-      - name: Merge Rewritten Branch into Main
+      - name: Checkout Main Branch
+        run: git checkout main
+
+      - name: Merge Content into Main
         run: |
-          git checkout main
           git merge --no-ff content-sync-branch --allow-unrelated-histories
+        continue-on-error: true
 
-      - name: Push Changes
+      - name: Resolve Conflicts for Content Folder
+        run: |
+          git status
+          git diff --name-only --diff-filter=U | grep '^content/' || echo "No conflicts"
+          git checkout --theirs content/
+          git add content/
+          git commit -m "Resolve content folder conflicts"
+
+      - name: Push Changes to Main
         run: git push origin main
 
-      - name: Cleanup Temporary Branch
+      - name: Cleanup Content Sync Branch
         run: |
           git branch -D content-sync-branch
-
-      # - name: Trigger Build Workflow
-      #   run: |
-      #     gh workflow run build-deploy.yml --ref main
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
