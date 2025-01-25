@@ -59,12 +59,8 @@ jobs:
             git checkout --theirs content/
             git add content/
             
-            # Get the conflicting commit message from the content branch
-            conflict_commit_msg=$(git log --format=%B -n 1 content-sync-branch)
-            resolved_commit_msg="[Sync Resolution] $conflict_commit_msg"
-            
-            # Commit the resolution with the conflicting commit's message and a custom prefix
-            git commit -m "$resolved_commit_msg"
+            # Commit the resolution with a custom prefix for conflict resolution
+            git commit -m "[Sync Resolution] Resolve conflicts in content directory"
           else
             echo "No conflicts in the content folder"
           fi
