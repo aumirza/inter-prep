@@ -73,16 +73,16 @@ jobs:
             echo "No conflicts in the content folder"
           fi
 
-      - name: Preserve Commit Messages and Add Prefix
-        run: |
-          # Get the commit messages from the content branch and add a prefix
-          commits=$(git log --oneline content-sync-branch ^main)
-          while IFS= read -r commit; do
-            # Add a prefix (e.g., "[Sync]") to each commit message and commit with it
-            commit_msg="[Sync] $commit"
-            git commit -m "$commit_msg"
-          done <<< "$commits"
-          git push --force-with-lease
+      # - name: Preserve Commit Messages and Add Prefix
+      #   run: |
+      #     # Get the commit messages from the content branch and add a prefix
+      #     commits=$(git log --oneline content-sync-branch ^main)
+      #     while IFS= read -r commit; do
+      #       # Add a prefix (e.g., "[Sync]") to each commit message and commit with it
+      #       commit_msg="[Sync] $commit"
+      #       git commit -m "$commit_msg"
+      #     done <<< "$commits"
+      #     git push --force-with-lease
 
       - name: Push Changes to Main
         run: git push origin main
