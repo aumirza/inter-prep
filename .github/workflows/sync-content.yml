@@ -30,12 +30,13 @@ jobs:
         run: |
           git checkout -b content-sync-branch origin/content
 
-      - name: Sync Content to Folder
+      - name: Move Content Files into /content Directory
         run: |
           mkdir -p content
-          rsync -a --delete --exclude='.git/' ./ ./content/
+          rsync -a --remove-source-files --exclude='.git/' --exclude='content/' ./ ./content/
+          find . -type f -not -path './content/*' -not -path './.git/*' -delete
           git add .
-          git commit -m "Sync content branch files to /content folder" || echo "No changes to commit"
+          git commit -m "Move content branch files into /content directory" || echo "No changes to commit"
 
       - name: Checkout Main Branch
         run: git checkout main
@@ -45,19 +46,12 @@ jobs:
           git merge --no-ff content-sync-branch --allow-unrelated-histories
         continue-on-error: true
 
-      - name: Resolve Conflicts
+      - name: Resolve Conflicts (if any)
         run: |
-          # Show all unmerged files
-          git status --short | grep '^UU' | awk '{print $2}'
-
-          # Auto-resolve conflicts by choosing "theirs" for conflicting files
-          git diff --name-only --diff-filter=U | xargs -I{} git checkout --theirs {}
-
-          # Stage all resolved files
-          git add .
-
-          # Commit resolved conflicts
-          git commit -m "Auto-resolved conflicts for content synchronization" || echo "No changes to commit"
+          git diff --name-only --diff-filter=U | grep '^content/' || echo "No conflicts"
+          git checkout --theirs content/
+          git add content/
+          git commit -m "Resolved conflicts for /content directory" || echo "No changes to commit"
 
       - name: Push Changes to Main
         run: git push origin main
