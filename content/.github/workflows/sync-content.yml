@@ -36,16 +36,12 @@ jobs:
           rsync -a --remove-source-files --exclude='.git/' --exclude='content/' ./ ./content/
           find . -type f -not -path './content/*' -not -path './.git/*' -delete
 
+          # Add and commit the moved files with a single commit
           git add .
-          # Retrieve commit messages from the content branch for the move
-          commits=$(git log --oneline content-sync-branch ^main)
-          while IFS= read -r commit; do
-            # Use the original commit message from the content branch
-            git commit -m "$commit" || echo "No changes to commit"
-          done <<< "$commits"
+          git commit -m "Move content branch files into /content directory" || echo "No changes to commit"
 
       - name: Checkout Main Branch
-        run: git checkout main
+        run: git checkout main || exit 0 # Skip checkout error if no changes are present
 
       - name: Merge Content into Main
         run: |
@@ -72,17 +68,6 @@ jobs:
           else
             echo "No conflicts in the content folder"
           fi
-
-      # - name: Preserve Commit Messages and Add Prefix
-      #   run: |
-      #     # Get the commit messages from the content branch and add a prefix
-      #     commits=$(git log --oneline content-sync-branch ^main)
-      #     while IFS= read -r commit; do
-      #       # Add a prefix (e.g., "[Sync]") to each commit message and commit with it
-      #       commit_msg="[Sync] $commit"
-      #       git commit -m "$commit_msg"
-      #     done <<< "$commits"
-      #     git push --force-with-lease
 
       - name: Push Changes to Main
         run: git push origin main
