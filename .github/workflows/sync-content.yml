@@ -52,17 +52,6 @@ jobs:
           git merge --no-ff content-sync-branch --allow-unrelated-histories
         continue-on-error: true
 
-      - name: Preserve Commit Messages and Add Prefix
-        run: |
-          # Get the commit messages from the content branch and add a prefix
-          commits=$(git log --oneline content-sync-branch ^main)
-          while IFS= read -r commit; do
-            # Add a prefix (e.g., "[Sync]") to each commit message and commit with it
-            commit_msg="[Sync] $commit"
-            git commit -m "$commit_msg"
-          done <<< "$commits"
-          git push --force-with-lease
-
       - name: Resolve Conflicts (if any)
         run: |
           # Check for conflicts in the content folder
@@ -83,6 +72,17 @@ jobs:
           else
             echo "No conflicts in the content folder"
           fi
+
+      - name: Preserve Commit Messages and Add Prefix
+        run: |
+          # Get the commit messages from the content branch and add a prefix
+          commits=$(git log --oneline content-sync-branch ^main)
+          while IFS= read -r commit; do
+            # Add a prefix (e.g., "[Sync]") to each commit message and commit with it
+            commit_msg="[Sync] $commit"
+            git commit -m "$commit_msg"
+          done <<< "$commits"
+          git push --force-with-lease
 
       - name: Push Changes to Main
         run: git push origin main
