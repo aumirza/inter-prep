@@ -45,13 +45,19 @@ jobs:
           git merge --no-ff content-sync-branch --allow-unrelated-histories
         continue-on-error: true
 
-      - name: Resolve Conflicts for Content Folder
+      - name: Resolve Conflicts
         run: |
-          git status
-          git diff --name-only --diff-filter=U | grep '^content/' || echo "No conflicts"
-          git checkout --theirs content/
-          git add content/
-          git commit -m "Resolve content folder conflicts"
+          # Show all unmerged files
+          git status --short | grep '^UU' | awk '{print $2}'
+
+          # Auto-resolve conflicts by choosing "theirs" for conflicting files
+          git diff --name-only --diff-filter=U | xargs -I{} git checkout --theirs {}
+
+          # Stage all resolved files
+          git add .
+
+          # Commit resolved conflicts
+          git commit -m "Auto-resolved conflicts for content synchronization" || echo "No changes to commit"
 
       - name: Push Changes to Main
         run: git push origin main
